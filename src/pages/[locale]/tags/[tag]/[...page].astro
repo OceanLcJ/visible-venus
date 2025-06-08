@@ -1,0 +1,84 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import Pagination from "@/components/Pagination.astro";
+import { getSortedPostsByLocale } from "@/utils/getSortedPosts";
+import getUniqueTags from "@/utils/getUniqueTags";
+import { SITE } from "@/config";
+import type { SupportedLocale } from "@/config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const enPosts = await getCollection("blog-en", ({ data }) => !data.draft);
+  const zhPosts = await getCollection("blog-zh", ({ data }) => !data.draft);
+
+  const enSortedPosts = getSortedPostsByLocale(enPosts, "en");
+  const zhSortedPosts = getSortedPostsByLocale(zhPosts, "zh");
+
+  const enTags = getUniqueTags(enSortedPosts);
+  const zhTags = getUniqueTags(zhSortedPosts);
+
+  const enPages = enTags.flatMap(({ tag, tagName }) => {
+    const filteredPosts = enSortedPosts.filter(post =>
+      post.data.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
+    );
+    return paginate(filteredPosts, {
+      params: { locale: "en", tag },
+      pageSize: SITE.postPerPage,
+      props: { locale: "en" as SupportedLocale, tag: tagName }
+    });
+  });
+
+  const zhPages = zhTags.flatMap(({ tag, tagName }) => {
+    const filteredPosts = zhSortedPosts.filter(post =>
+      post.data.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
+    );
+    return paginate(filteredPosts, {
+      params: { locale: "zh", tag },
+      pageSize: SITE.postPerPage,
+      props: { locale: "zh" as SupportedLocale, tag: tagName }
+    });
+  });
+
+  return [...enPages, ...zhPages];
+}) satisfies GetStaticPaths;
+
+const { page, locale, tag } = Astro.props;
+
+// Localized content
+const content = {
+  en: {
+    tagPrefix: "Tag:",
+    articlesWithTag: "All the articles with the tag",
+  },
+  zh: {
+    tagPrefix: "标签：",
+    articlesWithTag: "所有带有标签的文章",
+  },
+};
+
+const t = content[locale];
+---
+
+<Layout
+  title={`${t.tagPrefix}${tag} | ${SITE.title}`}
+  description={`${t.articlesWithTag} "${tag}".`}
+>
+  <Header />
+  <Main pageTitle={`${t.tagPrefix}${tag}`} pageDesc={`${t.articlesWithTag} "${tag}".`}>
+    <h1 slot="title" transition:name={`tag-${String(tag).replace(/\s+/g, '-').toLowerCase()}`}>
+      {t.tagPrefix}<span class="text-accent">{tag}</span>
+    </h1>
+    <ul>
+      {page.data.map(data => <Card {...data} locale={locale} />)}
+    </ul>
+  </Main>
+
+  <Pagination {page} />
+
+  <Footer noMarginTop={page.lastPage > 1} />
+</Layout>

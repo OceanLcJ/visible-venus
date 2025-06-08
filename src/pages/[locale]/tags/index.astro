@@ -1,0 +1,56 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Tag from "@/components/Tag.astro";
+import { getSortedPostsByLocale } from "@/utils/getSortedPosts";
+import getUniqueTags from "@/utils/getUniqueTags";
+import { SITE, LOCALE_CONFIG } from "@/config";
+import type { SupportedLocale } from "@/config";
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: "en" } },
+    { params: { locale: "zh" } },
+  ];
+}
+
+const { locale } = Astro.params as { locale: SupportedLocale };
+
+// Get posts for the current locale
+const enPosts = await getCollection("blog-en");
+const zhPosts = await getCollection("blog-zh");
+
+const posts = locale === "en" ? enPosts : zhPosts;
+const sortedPosts = getSortedPostsByLocale(posts, locale);
+const tags = getUniqueTags(sortedPosts);
+
+// Get localized config
+const localeConfig = LOCALE_CONFIG[locale];
+
+// Localized content
+const content = {
+  en: {
+    title: "Tags",
+    description: "All the tags used in posts.",
+  },
+  zh: {
+    title: "标签",
+    description: "文章中使用的所有标签。",
+  },
+};
+
+const t = content[locale];
+---
+
+<Layout title={`${t.title} | ${SITE.title}`} description={localeConfig.desc}>
+  <Header />
+  <Main pageTitle={t.title} pageDesc={t.description}>
+    <ul class="text-center">
+      {tags.map(({ tag, tagName }) => <Tag {tag} {tagName} />)}
+    </ul>
+  </Main>
+  <Footer />
+</Layout>

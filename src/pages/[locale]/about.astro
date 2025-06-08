@@ -1,0 +1,68 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import { SITE, LOCALE_CONFIG } from "@/config";
+import type { SupportedLocale } from "@/config";
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: "en" } },
+    { params: { locale: "zh" } },
+  ];
+}
+
+const { locale } = Astro.params as { locale: SupportedLocale };
+
+// Get localized config
+const localeConfig = LOCALE_CONFIG[locale];
+
+// Localized content
+const content = {
+  en: {
+    title: "About",
+    description: "Information about this blog and its author.",
+  },
+  zh: {
+    title: "关于",
+    description: "关于这个博客和作者的信息。",
+  },
+};
+
+const t = content[locale];
+---
+
+<Layout title={`${t.title} | ${SITE.title}`} description={localeConfig.desc}>
+  <Header />
+  <Main pageTitle={t.title} pageDesc={t.description}>
+    <div class="prose mx-auto mt-8 max-w-3xl">
+      {locale === "en" ? (
+        <div>
+          <p>
+            Welcome to AstroPaper! This is a minimal, responsive, accessible and SEO-friendly Astro blog theme.
+          </p>
+          <p>
+            This theme is designed and crafted based on <a href="https://satnaing.dev/blog" target="_blank" rel="noopener noreferrer">my personal blog</a>.
+          </p>
+          <p>
+            You can check out the <a href="https://github.com/satnaing/astro-paper" target="_blank" rel="noopener noreferrer">source code on GitHub</a> and customize it according to your needs.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p>
+            欢迎来到AstroPaper！这是一个极简、响应式、无障碍且SEO友好的Astro博客主题。
+          </p>
+          <p>
+            这个主题是基于<a href="https://satnaing.dev/blog" target="_blank" rel="noopener noreferrer">我的个人博客</a>设计和制作的。
+          </p>
+          <p>
+            你可以在<a href="https://github.com/satnaing/astro-paper" target="_blank" rel="noopener noreferrer">GitHub上查看源代码</a>，并根据你的需求进行自定义。
+          </p>
+        </div>
+      )}
+    </div>
+  </Main>
+  <Footer />
+</Layout>

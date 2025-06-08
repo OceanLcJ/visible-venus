@@ -1,0 +1,65 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import Main from "@/layouts/Main.astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import Pagination from "@/components/Pagination.astro";
+import { getSortedPostsByLocale } from "@/utils/getSortedPosts";
+import { SITE, LOCALE_CONFIG } from "@/config";
+import type { SupportedLocale } from "@/config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const enPosts = await getCollection("blog-en", ({ data }) => !data.draft);
+  const zhPosts = await getCollection("blog-zh", ({ data }) => !data.draft);
+
+  const enSortedPosts = getSortedPostsByLocale(enPosts, "en");
+  const zhSortedPosts = getSortedPostsByLocale(zhPosts, "zh");
+
+  const enPages = paginate(enSortedPosts, { 
+    pageSize: SITE.postPerPage,
+    params: { locale: "en" },
+    props: { locale: "en" as SupportedLocale }
+  });
+
+  const zhPages = paginate(zhSortedPosts, { 
+    pageSize: SITE.postPerPage,
+    params: { locale: "zh" },
+    props: { locale: "zh" as SupportedLocale }
+  });
+
+  return [...enPages, ...zhPages];
+}) satisfies GetStaticPaths;
+
+const { page, locale } = Astro.props;
+const localeConfig = LOCALE_CONFIG[locale];
+
+// Localized content
+const content = {
+  en: {
+    title: "Posts",
+    description: "All the articles I've posted.",
+  },
+  zh: {
+    title: "文章",
+    description: "我发布的所有文章。",
+  },
+};
+
+const t = content[locale];
+---
+
+<Layout title={`${t.title} | ${SITE.title}`} description={localeConfig.desc}>
+  <Header />
+  <Main pageTitle={t.title} pageDesc={t.description}>
+    <ul>
+      {page.data.map(data => <Card {...data} locale={locale} />)}
+    </ul>
+  </Main>
+
+  <Pagination {page} />
+
+  <Footer noMarginTop={page.lastPage > 1} />
+</Layout>

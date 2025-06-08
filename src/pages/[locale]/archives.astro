@@ -1,0 +1,79 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import { getSortedPostsByLocale } from "@/utils/getSortedPosts";
+import { SITE, LOCALE_CONFIG } from "@/config";
+import type { SupportedLocale } from "@/config";
+
+export async function getStaticPaths() {
+  return [
+    { params: { locale: "en" } },
+    { params: { locale: "zh" } },
+  ];
+}
+
+const { locale } = Astro.params as { locale: SupportedLocale };
+
+// Get posts for the current locale
+const enPosts = await getCollection("blog-en");
+const zhPosts = await getCollection("blog-zh");
+
+const posts = locale === "en" ? enPosts : zhPosts;
+const sortedPosts = getSortedPostsByLocale(posts, locale);
+
+// Get localized config
+const localeConfig = LOCALE_CONFIG[locale];
+
+// Localized content
+const content = {
+  en: {
+    title: "Archives",
+    description: "All the articles I've posted in chronological order.",
+  },
+  zh: {
+    title: "归档",
+    description: "我发布的所有文章，按时间顺序排列。",
+  },
+};
+
+const t = content[locale];
+---
+
+<Layout title={`${t.title} | ${SITE.title}`} description={localeConfig.desc}>
+  <Header />
+  <Main pageTitle={t.title} pageDesc={t.description}>
+    <ul>
+      {
+        sortedPosts.map(({ data, id }) => {
+          const { title, pubDatetime, description } = data;
+          const href = `/${locale}/posts/${id}`;
+          return (
+            <li class="my-6">
+              <LinkButton
+                href={href}
+                class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 focus-visible:no-underline focus-visible:underline-offset-0"
+              >
+                <h2 class="text-lg font-medium decoration-dashed hover:underline">
+                  {title}
+                </h2>
+              </LinkButton>
+              <p class="mt-2">{description}</p>
+              <span class="italic">
+                {pubDatetime.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </Main>
+  <Footer />
+</Layout>

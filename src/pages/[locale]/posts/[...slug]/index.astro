@@ -1,0 +1,44 @@
+---
+import { type CollectionEntry, getCollection } from "astro:content";
+import PostDetails from "@/layouts/PostDetails.astro";
+import { getSortedPostsByLocale } from "@/utils/getSortedPosts";
+import type { SupportedLocale } from "@/config";
+
+export interface Props {
+  post: CollectionEntry<"blog-en" | "blog-zh">;
+  locale: SupportedLocale;
+}
+
+export async function getStaticPaths() {
+  const enPosts = await getCollection("blog-en", ({ data }) => !data.draft);
+  const zhPosts = await getCollection("blog-zh", ({ data }) => !data.draft);
+
+  const enPostResult = enPosts.map(post => ({
+    params: {
+      locale: "en",
+      slug: post.id
+    },
+    props: { post, locale: "en" as SupportedLocale },
+  }));
+
+  const zhPostResult = zhPosts.map(post => ({
+    params: {
+      locale: "zh",
+      slug: post.id
+    },
+    props: { post, locale: "zh" as SupportedLocale },
+  }));
+
+  return [...enPostResult, ...zhPostResult];
+}
+
+const { post, locale } = Astro.props;
+
+const enPosts = await getCollection("blog-en");
+const zhPosts = await getCollection("blog-zh");
+
+const allPosts = locale === "en" ? enPosts : zhPosts;
+const sortedPosts = getSortedPostsByLocale(allPosts, locale);
+---
+
+<PostDetails post={post} posts={sortedPosts} locale={locale} />
