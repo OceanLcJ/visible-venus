@@ -8,9 +8,23 @@ import { SITE } from "./src/config";
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", "zh"],
+    routing: {
+      prefixDefaultLocale: true,
+    },
+  },
   integrations: [
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
+      i18n: {
+        defaultLocale: "en",
+        locales: {
+          en: "en",
+          zh: "zh",
+        },
+      },
     }),
   ],
   markdown: {

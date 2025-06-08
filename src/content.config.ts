@@ -4,8 +4,9 @@ import { SITE } from "@/config";
 
 export const BLOG_PATH = "src/data/blog";
 
-const blog = defineCollection({
-  loader: glob({ pattern: "**/[^_]*.md", base: `./${BLOG_PATH}` }),
+// English blog collection
+const blogEn = defineCollection({
+  loader: glob({ pattern: "**/[^_]*.md", base: `./${BLOG_PATH}/en` }),
   schema: ({ image }) =>
     z.object({
       author: z.string().default(SITE.author),
@@ -20,7 +21,54 @@ const blog = defineCollection({
       canonicalURL: z.string().optional(),
       hideEditPost: z.boolean().optional(),
       timezone: z.string().optional(),
+      locale: z.literal("en").default("en"),
     }),
 });
 
-export const collections = { blog };
+// Chinese blog collection
+const blogZh = defineCollection({
+  loader: glob({ pattern: "**/[^_]*.md", base: `./${BLOG_PATH}/zh` }),
+  schema: ({ image }) =>
+    z.object({
+      author: z.string().default(SITE.author),
+      pubDatetime: z.date(),
+      modDatetime: z.date().optional().nullable(),
+      title: z.string(),
+      featured: z.boolean().optional(),
+      draft: z.boolean().optional(),
+      tags: z.array(z.string()).default(["others"]),
+      ogImage: image().or(z.string()).optional(),
+      description: z.string(),
+      canonicalURL: z.string().optional(),
+      hideEditPost: z.boolean().optional(),
+      timezone: z.string().optional(),
+      locale: z.literal("zh").default("zh"),
+    }),
+});
+
+// Legacy blog collection for backward compatibility
+const blog = defineCollection({
+  loader: glob({ pattern: "**/[^_]*.md", base: `./${BLOG_PATH}/en` }),
+  schema: ({ image }) =>
+    z.object({
+      author: z.string().default(SITE.author),
+      pubDatetime: z.date(),
+      modDatetime: z.date().optional().nullable(),
+      title: z.string(),
+      featured: z.boolean().optional(),
+      draft: z.boolean().optional(),
+      tags: z.array(z.string()).default(["others"]),
+      ogImage: image().or(z.string()).optional(),
+      description: z.string(),
+      canonicalURL: z.string().optional(),
+      hideEditPost: z.boolean().optional(),
+      timezone: z.string().optional(),
+      locale: z.literal("en").default("en"),
+    }),
+});
+
+export const collections = {
+  blog, // for backward compatibility
+  "blog-en": blogEn,
+  "blog-zh": blogZh,
+};
