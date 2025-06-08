@@ -1,0 +1,135 @@
+---
+import { getLocalizedPath } from "@/utils/getPath";
+import type { SupportedLocale } from "@/config";
+
+export interface Props {
+  currentLocale: SupportedLocale;
+  currentPath: string;
+}
+
+const { currentLocale, currentPath } = Astro.props;
+
+// Remove locale prefix from current path to get the base path
+const basePath = currentPath.replace(/^\/(en|zh)/, '') || '/';
+
+// Generate paths for both languages
+const enPath = getLocalizedPath(basePath, 'en');
+const zhPath = getLocalizedPath(basePath, 'zh');
+---
+
+<div class="language-switcher">
+  <div class="relative inline-block">
+    <button
+      id="language-btn"
+      class="focus-outline flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-skin-fill"
+      aria-label="Language switcher"
+      aria-expanded="false"
+    >
+      <span class="text-base">🌐</span>
+      <span class="hidden sm:inline">
+        {currentLocale === 'en' ? 'English' : '中文'}
+      </span>
+      <svg
+        class="h-4 w-4 transition-transform"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        ></path>
+      </svg>
+    </button>
+    
+    <div
+      id="language-menu"
+      class="absolute right-0 top-full z-50 mt-1 hidden w-48 rounded-md border border-skin-line bg-skin-fill py-1 shadow-lg"
+    >
+      <a
+        href={enPath}
+        class:list={[
+          "block px-4 py-2 text-sm hover:bg-skin-accent hover:text-skin-inverted",
+          { "bg-skin-accent text-skin-inverted": currentLocale === 'en' }
+        ]}
+      >
+        <span class="mr-2">🇺🇸</span>
+        English
+      </a>
+      <a
+        href={zhPath}
+        class:list={[
+          "block px-4 py-2 text-sm hover:bg-skin-accent hover:text-skin-inverted",
+          { "bg-skin-accent text-skin-inverted": currentLocale === 'zh' }
+        ]}
+      >
+        <span class="mr-2">🇨🇳</span>
+        中文
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setupLanguageSwitcher() {
+    const languageBtn = document.querySelector("#language-btn") as HTMLButtonElement | null;
+    const languageMenu = document.querySelector("#language-menu") as HTMLDivElement | null;
+    const chevron = languageBtn?.querySelector("svg") as SVGElement | null;
+
+    if (!languageBtn || !languageMenu || !chevron) return;
+
+    function toggleMenu() {
+      if (!languageBtn || !languageMenu || !chevron) return;
+
+      const isOpen = languageBtn.getAttribute("aria-expanded") === "true";
+
+      languageBtn.setAttribute("aria-expanded", (!isOpen).toString());
+      languageMenu.classList.toggle("hidden", isOpen);
+      chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+    }
+
+    function closeMenu() {
+      if (!languageBtn || !languageMenu || !chevron) return;
+
+      languageBtn.setAttribute("aria-expanded", "false");
+      languageMenu.classList.add("hidden");
+      chevron.style.transform = "rotate(0deg)";
+    }
+
+    // Toggle menu on button click
+    languageBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener("click", (e) => {
+      if (languageBtn && languageMenu &&
+          !languageBtn.contains(e.target as Node) &&
+          !languageMenu.contains(e.target as Node)) {
+        closeMenu();
+      }
+    });
+
+    // Close menu on escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeMenu();
+      }
+    });
+  }
+
+  // Initialize on page load
+  setupLanguageSwitcher();
+
+  // Re-initialize after view transitions
+  document.addEventListener("astro:after-swap", setupLanguageSwitcher);
+</script>
+
+<style>
+  .language-switcher {
+    @apply relative;
+  }
+</style>

@@ -7,9 +7,18 @@ import IconArchive from "@/assets/icons/IconArchive.svg";
 import IconSunHigh from "@/assets/icons/IconSunHigh.svg";
 import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import LinkButton from "./LinkButton.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
 import { SITE } from "@/config";
+import { getLocalizedPath } from "@/utils/getPath";
+import type { SupportedLocale } from "@/config";
 
 const { pathname } = Astro.url;
+
+// Extract locale from pathname
+const pathSegments = pathname.split('/').filter(Boolean);
+const currentLocale = (pathSegments[0] === 'en' || pathSegments[0] === 'zh')
+  ? pathSegments[0] as SupportedLocale
+  : 'en';
 
 // Remove trailing slash from current pathname if exists
 const currentPath =
@@ -21,6 +30,14 @@ const isActive = (path: string) => {
 
   return currentPath === path || currentPathArray[0] === pathArray[0];
 };
+
+// Generate localized navigation paths
+const postsPath = getLocalizedPath("posts", currentLocale);
+const tagsPath = getLocalizedPath("tags", currentLocale);
+const aboutPath = getLocalizedPath("about", currentLocale);
+const archivesPath = getLocalizedPath("archives", currentLocale);
+const searchPath = getLocalizedPath("search", currentLocale);
+const homePath = getLocalizedPath("", currentLocale);
 ---
 
 <header>
@@ -29,7 +46,7 @@ const isActive = (path: string) => {
     href="#main-content"
     class="absolute -top-full left-16 z-50 bg-background px-3 py-2 text-accent backdrop-blur-lg transition-all focus:top-4"
   >
-    Skip to content
+    {currentLocale === 'zh' ? '跳转到内容' : 'Skip to content'}
   </a>
   <div
     id="nav-container"
@@ -40,7 +57,7 @@ const isActive = (path: string) => {
       class="relative flex w-full items-baseline justify-between bg-background p-4 sm:items-center sm:py-6"
     >
       <a
-        href="/"
+        href={homePath}
         class="absolute py-1 text-xl leading-8 font-semibold whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
       >
         {SITE.title}
@@ -52,7 +69,7 @@ const isActive = (path: string) => {
         <button
           id="menu-btn"
           class="focus-outline self-end p-2 sm:hidden"
-          aria-label="Open Menu"
+          aria-label={currentLocale === 'zh' ? '打开菜单' : 'Open Menu'}
           aria-expanded="false"
           aria-controls="menu-items"
         >
@@ -69,53 +86,56 @@ const isActive = (path: string) => {
           ]}
         >
           <li class="col-span-2">
-            <a href="/posts" class:list={{ "active-nav": isActive("/posts") }}>
-              Posts
+            <a href={postsPath} class:list={{ "active-nav": isActive(postsPath) }}>
+              {currentLocale === 'zh' ? '文章' : 'Posts'}
             </a>
           </li>
           <li class="col-span-2">
-            <a href="/tags" class:list={{ "active-nav": isActive("/tags") }}>
-              Tags
+            <a href={tagsPath} class:list={{ "active-nav": isActive(tagsPath) }}>
+              {currentLocale === 'zh' ? '标签' : 'Tags'}
             </a>
           </li>
           <li class="col-span-2">
-            <a href="/about" class:list={{ "active-nav": isActive("/about") }}>
-              About
+            <a href={aboutPath} class:list={{ "active-nav": isActive(aboutPath) }}>
+              {currentLocale === 'zh' ? '关于' : 'About'}
             </a>
           </li>
           {
             SITE.showArchives && (
               <li class="col-span-2">
                 <LinkButton
-                  href="/archives"
+                  href={archivesPath}
                   class:list={[
                     "focus-outline flex justify-center p-3 sm:p-1",
                     {
-                      "active-nav [&>svg]:stroke-accent": isActive("/archives"),
+                      "active-nav [&>svg]:stroke-accent": isActive(archivesPath),
                     },
                   ]}
-                  ariaLabel="archives"
-                  title="Archives"
+                  ariaLabel={currentLocale === 'zh' ? '归档' : 'archives'}
+                  title={currentLocale === 'zh' ? '归档' : 'Archives'}
                 >
                   <IconArchive class="hidden sm:inline-block" />
-                  <span class="sm:sr-only">Archives</span>
+                  <span class="sm:sr-only">{currentLocale === 'zh' ? '归档' : 'Archives'}</span>
                 </LinkButton>
               </li>
             )
           }
           <li class="col-span-1 flex items-center justify-center">
             <LinkButton
-              href="/search"
+              href={searchPath}
               class:list={[
                 "focus-outline flex p-3 sm:p-1",
-                { "[&>svg]:stroke-accent": isActive("/search") },
+                { "[&>svg]:stroke-accent": isActive(searchPath) },
               ]}
-              ariaLabel="search"
-              title="Search"
+              ariaLabel={currentLocale === 'zh' ? '搜索' : 'search'}
+              title={currentLocale === 'zh' ? '搜索' : 'Search'}
             >
               <IconSearch />
-              <span class="sr-only">Search</span>
+              <span class="sr-only">{currentLocale === 'zh' ? '搜索' : 'Search'}</span>
             </LinkButton>
+          </li>
+          <li class="col-span-1 flex items-center justify-center">
+            <LanguageSwitcher currentLocale={currentLocale} currentPath={currentPath} />
           </li>
           {
             SITE.lightAndDarkMode && (
@@ -123,8 +143,8 @@ const isActive = (path: string) => {
                 <button
                   id="theme-btn"
                   class="focus-outline relative size-12 p-4 sm:size-8 hover:[&>svg]:stroke-accent"
-                  title="Toggles light & dark"
-                  aria-label="auto"
+                  title={currentLocale === 'zh' ? '切换明暗主题' : 'Toggles light & dark'}
+                  aria-label={currentLocale === 'zh' ? '自动' : 'auto'}
                   aria-live="polite"
                 >
                   <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
@@ -151,9 +171,13 @@ const isActive = (path: string) => {
 
     menuBtn.addEventListener("click", () => {
       const openMenu = menuBtn.getAttribute("aria-expanded") === "true";
+      const isZh = window.location.pathname.startsWith('/zh');
 
       menuBtn.setAttribute("aria-expanded", openMenu ? "false" : "true");
-      menuBtn.setAttribute("aria-label", openMenu ? "Open Menu" : "Close Menu");
+      menuBtn.setAttribute("aria-label", openMenu
+        ? (isZh ? "打开菜单" : "Open Menu")
+        : (isZh ? "关闭菜单" : "Close Menu")
+      );
 
       menuItems.classList.toggle("hidden");
       menuIcon.classList.toggle("hidden");
